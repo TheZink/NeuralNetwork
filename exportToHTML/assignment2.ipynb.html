@@ -1,0 +1,232 @@
+<html>
+<head>
+<title>assignment2.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #6aab73;}
+.s4 { color: #2aacb8;}
+.s5 { color: #7a7e85;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+assignment2.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# Week 2 assignment 
+ 
+In this assignment the objective are to try out different model architectures and to experiement with different kinds of regularization. <hr class="ls0">#%% 
+</span><span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span>
+<span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">from </span><span class="s0">keras</span><span class="s2">.</span><span class="s0">models </span><span class="s1">import </span><span class="s0">Sequential</span>
+<span class="s1">from </span><span class="s0">keras</span><span class="s2">.</span><span class="s0">layers </span><span class="s1">import </span><span class="s0">Input</span><span class="s2">, </span><span class="s0">Dense</span>
+<span class="s1">from </span><span class="s0">keras</span><span class="s2">.</span><span class="s0">datasets </span><span class="s1">import </span><span class="s0">california_housing</span>
+<span class="s1">from </span><span class="s0">sklearn</span><span class="s2">.</span><span class="s0">model_selection </span><span class="s1">import </span><span class="s0">train_test_split</span>
+
+
+<span class="s2">(</span><span class="s0">inputs</span><span class="s2">, </span><span class="s0">targets</span><span class="s2">), (</span><span class="s0">x_test</span><span class="s2">, </span><span class="s0">y_test</span><span class="s2">) = </span><span class="s0">california_housing</span><span class="s2">.</span><span class="s0">load_data</span><span class="s2">(</span><span class="s0">version</span><span class="s2">=</span><span class="s3">'large'</span><span class="s2">,</span>
+                                                                   <span class="s0">test_split</span><span class="s2">=</span><span class="s4">0.2</span><span class="s2">)</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s0">inputs</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">, </span><span class="s0">targets</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s0">x_test</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">, </span><span class="s0">y_test</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% md 
+## Baseline method 
+ 
+This section establishes a baseline for our model performance. It involves several key steps: 
+ 
+1.  **Data Splitting**: The dataset is divided into training, validation, and test sets. The training set is used to train the model, the validation set helps tune hyperparameters and prevent overfitting during training, and the test set is used for final evaluation. 
+2.  **Data Preprocessing**: Input features (`x_train`, `x_val`, `x_test`) are standardized by subtracting the mean and dividing by the standard deviation of the training data. Target values (`y_train`, `y_val`, `y_test`) are scaled by dividing by `1e5` (100,000) to keep them within a reasonable range for training. 
+3.  **Model Architecture**: A simple Sequential neural network is defined with two `Dense` layers, each having 64 units and ReLU activation, followed by a final `Dense` layer with one unit for output. This architecture serves as our basic model. 
+4.  **Model Compilation**: The model is compiled using the Adam optimizer, Mean Squared Error (MSE) as the loss function, and Mean Absolute Error (MAE) as a metric. MSE is commonly used for regression tasks, and MAE provides an easily interpretable measure of error. 
+5.  **Model Training**: The model is trained for 100 epochs with a batch size of 32. The validation data is used to monitor performance during training, and `verbose=0` keeps the training output concise. 
+6.  **Performance Visualization**: Plots are generated to visualize the training and validation loss, as well as MAE, over the epochs. These plots help us understand the model's learning progress and identify signs of overfitting. <hr class="ls0">#%% md 
+## Baseline method <hr class="ls0">#%% 
+</span><span class="s5"># x_train = inputs[:380]</span>
+<span class="s5"># y_train = targets[:380]</span>
+<span class="s5"># x_val = inputs[380:]</span>
+<span class="s5"># y_val = targets[380:]</span>
+
+<span class="s0">x_train</span><span class="s2">, </span><span class="s0">x_val</span><span class="s2">, </span><span class="s0">y_train</span><span class="s2">, </span><span class="s0">y_val </span><span class="s2">= </span><span class="s0">train_test_split</span><span class="s2">(</span><span class="s0">inputs</span><span class="s2">, </span><span class="s0">targets</span><span class="s2">, </span><span class="s0">test_size</span><span class="s2">=</span><span class="s4">0.2</span><span class="s2">, </span><span class="s0">random_state</span><span class="s2">=</span><span class="s4">42</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+mean </span><span class="s2">= </span><span class="s0">x_train</span><span class="s2">.</span><span class="s0">mean</span><span class="s2">(</span><span class="s0">axis</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s0">std </span><span class="s2">= </span><span class="s0">x_train</span><span class="s2">.</span><span class="s0">std</span><span class="s2">(</span><span class="s0">axis</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s0">x_train </span><span class="s2">-= </span><span class="s0">mean</span>
+<span class="s0">x_train </span><span class="s2">/= </span><span class="s0">std</span>
+<span class="s0">x_test </span><span class="s2">-= </span><span class="s0">mean</span>
+<span class="s0">x_test </span><span class="s2">/= </span><span class="s0">std</span>
+<span class="s0">x_val </span><span class="s2">-= </span><span class="s0">mean</span>
+<span class="s0">x_val </span><span class="s2">/= </span><span class="s0">std</span>
+<span class="s0">y_train </span><span class="s2">/= </span><span class="s4">1e5</span>
+<span class="s0">y_test </span><span class="s2">/= </span><span class="s4">1e5</span>
+<span class="s0">y_val </span><span class="s2">/= </span><span class="s4">1e5</span><hr class="ls0"><span class="s0">#%% 
+model </span><span class="s2">= </span><span class="s0">Sequential</span><span class="s2">([</span>
+    <span class="s0">Input</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s4">8</span><span class="s2">,)),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">1</span><span class="s2">)</span>
+    <span class="s2">])</span>
+
+<span class="s0">model</span><span class="s2">.</span><span class="s0">compile</span><span class="s2">(</span><span class="s0">optimizer</span><span class="s2">=</span><span class="s3">&quot;adam&quot;</span><span class="s2">, </span><span class="s0">loss</span><span class="s2">=</span><span class="s3">&quot;mse&quot;</span><span class="s2">, </span><span class="s0">metrics</span><span class="s2">=[</span><span class="s3">&quot;mae&quot;</span><span class="s2">])</span><hr class="ls0"><span class="s0">#%% 
+history </span><span class="s2">= </span><span class="s0">model</span><span class="s2">.</span><span class="s0">fit</span><span class="s2">(</span><span class="s0">x_train</span><span class="s2">, </span><span class="s0">y_train</span><span class="s2">, </span><span class="s0">epochs</span><span class="s2">=</span><span class="s4">100</span><span class="s2">, </span><span class="s0">batch_size</span><span class="s2">=</span><span class="s4">32</span><span class="s2">, </span><span class="s0">validation_data</span><span class="s2">=(</span><span class="s0">x_val</span><span class="s2">, </span><span class="s0">y_val</span><span class="s2">), </span><span class="s0">verbose</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'loss'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'train loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_loss'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'val_loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s3">'Epoch'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s3">'Loss'</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'mae'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'train MAE'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_mae'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'val_MAE'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s3">'Epoch'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s3">'Mean absolute error (in 100000 $)'</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% md 
+## Regularization Methods 
+ 
+Regularization is a technique used in machine learning to prevent overfitting by adding a penalty term to the loss function. This encourages the model to learn simpler patterns and reduces the complexity of the model, which can lead to better generalization on unseen data. Here, we will explore L2 regularization (also known as weight decay) by adding a small penalty based on the square of the weight magnitudes. 
+ 
+This section will demonstrate how L2 regularization impacts the model's performance, specifically comparing its loss and MAE metrics against the baseline model during training and validation. <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">keras</span><span class="s2">.</span><span class="s0">regularizers </span><span class="s1">import </span><span class="s0">l2</span>
+
+<span class="s0">model_reg </span><span class="s2">= </span><span class="s0">Sequential</span><span class="s2">([</span>
+    <span class="s0">Input</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s4">8</span><span class="s2">,)),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">, </span><span class="s0">kernel_regularizer</span><span class="s2">=</span><span class="s0">l2</span><span class="s2">(</span><span class="s4">0.001</span><span class="s2">)),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">, </span><span class="s0">kernel_regularizer</span><span class="s2">=</span><span class="s0">l2</span><span class="s2">(</span><span class="s4">0.001</span><span class="s2">)),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">])</span>
+
+<span class="s0">model_reg</span><span class="s2">.</span><span class="s0">compile</span><span class="s2">(</span><span class="s0">optimizer</span><span class="s2">=</span><span class="s3">&quot;adam&quot;</span><span class="s2">, </span><span class="s0">loss</span><span class="s2">=</span><span class="s3">&quot;mse&quot;</span><span class="s2">, </span><span class="s0">metrics</span><span class="s2">=[</span><span class="s3">&quot;mae&quot;</span><span class="s2">])</span><hr class="ls0"><span class="s0">#%% 
+history_reg </span><span class="s2">= </span><span class="s0">model_reg</span><span class="s2">.</span><span class="s0">fit</span><span class="s2">(</span><span class="s0">x_train</span><span class="s2">, </span><span class="s0">y_train</span><span class="s2">, </span><span class="s0">epochs</span><span class="s2">=</span><span class="s4">100</span><span class="s2">, </span><span class="s0">batch_size</span><span class="s2">=</span><span class="s4">32</span><span class="s2">, </span><span class="s0">validation_data</span><span class="s2">=(</span><span class="s0">x_val</span><span class="s2">, </span><span class="s0">y_val</span><span class="s2">), </span><span class="s0">verbose</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_reg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'loss'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'train loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_reg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_loss'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'val_loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s3">'Test'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s3">'Epoch'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s3">'Loss'</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_reg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'mae'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'train MAE'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_reg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_mae'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'val_MAE'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s3">'Epoch'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s3">'Mean absolute error (in 100000 $)'</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% md 
+## Dropout 
+ 
+Dropout is another powerful regularization technique where randomly selected neurons are ignored during training. This means that their contribution to the activation of downstream neurons is temporarily removed, forcing the network to learn more robust features that are not dependent on the presence of any single neuron. This helps prevent complex co-adaptations on training data. 
+ 
+In this section, we will implement dropout layers in our neural network and analyze its effect on the training and validation loss and MAE, comparing it to the baseline and L2 regularized models. <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">keras</span><span class="s2">.</span><span class="s0">layers </span><span class="s1">import </span><span class="s0">Dropout</span>
+
+<span class="s0">model_drop </span><span class="s2">= </span><span class="s0">Sequential</span><span class="s2">([</span>
+    <span class="s0">Input</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s4">8</span><span class="s2">,)),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+    <span class="s0">Dropout</span><span class="s2">(</span><span class="s4">0.2</span><span class="s2">),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+    <span class="s0">Dropout</span><span class="s2">(</span><span class="s4">0.2</span><span class="s2">),</span>
+    <span class="s0">Dense</span><span class="s2">(</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">])</span><hr class="ls0"><span class="s0">#%% 
+model_drop</span><span class="s2">.</span><span class="s0">compile</span><span class="s2">(</span><span class="s0">optimizer</span><span class="s2">=</span><span class="s3">&quot;adam&quot;</span><span class="s2">, </span><span class="s0">loss</span><span class="s2">=</span><span class="s3">&quot;mse&quot;</span><span class="s2">, </span><span class="s0">metrics</span><span class="s2">=[</span><span class="s3">&quot;mae&quot;</span><span class="s2">])</span><hr class="ls0"><span class="s0">#%% 
+history_drop </span><span class="s2">= </span><span class="s0">model_drop</span><span class="s2">.</span><span class="s0">fit</span><span class="s2">(</span><span class="s0">x_train</span><span class="s2">, </span><span class="s0">y_train</span><span class="s2">, </span><span class="s0">epochs</span><span class="s2">=</span><span class="s4">100</span><span class="s2">, </span><span class="s0">batch_size</span><span class="s2">=</span><span class="s4">32</span><span class="s2">, </span><span class="s0">validation_data</span><span class="s2">=(</span><span class="s0">x_val</span><span class="s2">, </span><span class="s0">y_val</span><span class="s2">), </span><span class="s0">verbose</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_drop</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'loss'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'train loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_drop</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_loss'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'val_loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s3">'Test'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s3">'Epoch'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s3">'Loss'</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_drop</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'mae'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'train MAE'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">history_drop</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_mae'</span><span class="s2">][</span><span class="s4">10</span><span class="s2">:], </span><span class="s0">label</span><span class="s2">=</span><span class="s3">'val_MAE'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">xlabel</span><span class="s2">(</span><span class="s3">'Epoch'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">ylabel</span><span class="s2">(</span><span class="s3">'Mean absolute error (in 100000 $)'</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% md 
+## Final Model Training and Evaluation 
+ 
+Now we determine, which model has the best performance. <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">IPython</span><span class="s2">.</span><span class="s0">display </span><span class="s1">import </span><span class="s0">display</span><span class="s2">, </span><span class="s0">Markdown</span>
+
+<span class="s0">final_val_mae_drop </span><span class="s2">= </span><span class="s0">history_drop</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_mae'</span><span class="s2">][-</span><span class="s4">1</span><span class="s2">]</span>
+<span class="s0">final_val_mae_reg </span><span class="s2">= </span><span class="s0">history_reg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_mae'</span><span class="s2">][-</span><span class="s4">1</span><span class="s2">]</span>
+<span class="s0">final_val_mae_baseline </span><span class="s2">= </span><span class="s0">history</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s3">'val_mae'</span><span class="s2">][-</span><span class="s4">1</span><span class="s2">]</span>
+
+<span class="s0">mae_table </span><span class="s2">= </span><span class="s3">f&quot;&quot;&quot;</span>
+<span class="s3">### Model perfomance Summary (Final Validation MAE)</span>
+<span class="s3">| Model        | MAE                          |</span>
+<span class="s3">| ---          | ---                          |</span>
+<span class="s3">| Baseline     | </span><span class="s1">{</span><span class="s0">final_val_mae_baseline</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">} </span><span class="s3">|</span>
+<span class="s3">| Regularizers | </span><span class="s1">{</span><span class="s0">final_val_mae_reg</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}      </span><span class="s3">|</span>
+<span class="s3">| Dropout      | </span><span class="s1">{</span><span class="s0">final_val_mae_drop</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}     </span><span class="s3">|</span>
+<span class="s3">&quot;&quot;&quot;</span>
+
+<span class="s0">display</span><span class="s2">(</span><span class="s0">Markdown</span><span class="s2">(</span><span class="s0">mae_table</span><span class="s2">))</span>
+<hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+
+<span class="s5"># Determine the best model based on final validation MAE</span>
+<span class="s0">final_val_maes </span><span class="s2">= {</span>
+    <span class="s3">'Baseline'</span><span class="s2">: </span><span class="s0">final_val_mae_baseline</span><span class="s2">,</span>
+    <span class="s3">'Regularizers'</span><span class="s2">: </span><span class="s0">final_val_mae_reg</span><span class="s2">,</span>
+    <span class="s3">'Dropout'</span><span class="s2">: </span><span class="s0">final_val_mae_drop</span>
+<span class="s2">}</span>
+
+<span class="s0">best_model_name </span><span class="s2">= </span><span class="s0">min</span><span class="s2">(</span><span class="s0">final_val_maes</span><span class="s2">, </span><span class="s0">key</span><span class="s2">=</span><span class="s0">final_val_maes</span><span class="s2">.</span><span class="s0">get</span><span class="s2">)</span>
+<span class="s0">best_val_mae </span><span class="s2">= </span><span class="s0">final_val_maes</span><span class="s2">[</span><span class="s0">best_model_name</span><span class="s2">]</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;The best model based on validation MAE is: </span><span class="s1">{</span><span class="s0">best_model_name</span><span class="s1">} </span><span class="s3">with MAE: </span><span class="s1">{</span><span class="s0">best_val_mae</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span>
+
+<span class="s5"># Combine training and validation data</span>
+<span class="s0">x_combined_train </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">concatenate</span><span class="s2">((</span><span class="s0">x_train</span><span class="s2">, </span><span class="s0">x_val</span><span class="s2">), </span><span class="s0">axis</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s0">y_combined_train </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">concatenate</span><span class="s2">((</span><span class="s0">y_train</span><span class="s2">, </span><span class="s0">y_val</span><span class="s2">), </span><span class="s0">axis</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Combined training data shape: </span><span class="s1">{</span><span class="s0">x_combined_train</span><span class="s2">.</span><span class="s0">shape</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Combined training targets shape: </span><span class="s1">{</span><span class="s0">y_combined_train</span><span class="s2">.</span><span class="s0">shape</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span>
+
+<span class="s5"># Re-initialize and train the best model</span>
+<span class="s1">if </span><span class="s0">best_model_name </span><span class="s2">== </span><span class="s3">'Baseline'</span><span class="s2">:</span>
+    <span class="s0">final_model </span><span class="s2">= </span><span class="s0">Sequential</span><span class="s2">([</span>
+        <span class="s0">Input</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s4">8</span><span class="s2">,)),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">1</span><span class="s2">)</span>
+    <span class="s2">])</span>
+<span class="s1">elif </span><span class="s0">best_model_name </span><span class="s2">== </span><span class="s3">'Regularizers'</span><span class="s2">:</span>
+    <span class="s0">final_model </span><span class="s2">= </span><span class="s0">Sequential</span><span class="s2">([</span>
+        <span class="s0">Input</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s4">8</span><span class="s2">,)),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">, </span><span class="s0">kernel_regularizer</span><span class="s2">=</span><span class="s0">l2</span><span class="s2">(</span><span class="s4">0.001</span><span class="s2">)),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">, </span><span class="s0">kernel_regularizer</span><span class="s2">=</span><span class="s0">l2</span><span class="s2">(</span><span class="s4">0.001</span><span class="s2">)),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">1</span><span class="s2">)</span>
+    <span class="s2">])</span>
+<span class="s1">else</span><span class="s2">: </span><span class="s5"># Dropout</span>
+    <span class="s0">final_model </span><span class="s2">= </span><span class="s0">Sequential</span><span class="s2">([</span>
+        <span class="s0">Input</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s4">8</span><span class="s2">,)),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+        <span class="s0">Dropout</span><span class="s2">(</span><span class="s4">0.2</span><span class="s2">),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s3">'relu'</span><span class="s2">),</span>
+        <span class="s0">Dropout</span><span class="s2">(</span><span class="s4">0.2</span><span class="s2">),</span>
+        <span class="s0">Dense</span><span class="s2">(</span><span class="s4">1</span><span class="s2">)</span>
+    <span class="s2">])</span>
+
+<span class="s0">final_model</span><span class="s2">.</span><span class="s0">compile</span><span class="s2">(</span><span class="s0">optimizer</span><span class="s2">=</span><span class="s3">&quot;adam&quot;</span><span class="s2">, </span><span class="s0">loss</span><span class="s2">=</span><span class="s3">&quot;mse&quot;</span><span class="s2">, </span><span class="s0">metrics</span><span class="s2">=[</span><span class="s3">&quot;mae&quot;</span><span class="s2">])</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Training the </span><span class="s1">{</span><span class="s0">best_model_name</span><span class="s1">} </span><span class="s3">model on combined train+validation data...&quot;</span><span class="s2">)</span>
+<span class="s0">history_final </span><span class="s2">= </span><span class="s0">final_model</span><span class="s2">.</span><span class="s0">fit</span><span class="s2">(</span><span class="s0">x_combined_train</span><span class="s2">, </span><span class="s0">y_combined_train</span><span class="s2">, </span><span class="s0">epochs</span><span class="s2">=</span><span class="s4">100</span><span class="s2">, </span><span class="s0">batch_size</span><span class="s2">=</span><span class="s4">32</span><span class="s2">, </span><span class="s0">verbose</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+
+<span class="s5"># Evaluate on the test set</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s3">&quot;Evaluating the final model on the test set...&quot;</span><span class="s2">)</span>
+<span class="s0">loss</span><span class="s2">, </span><span class="s0">mae </span><span class="s2">= </span><span class="s0">final_model</span><span class="s2">.</span><span class="s0">evaluate</span><span class="s2">(</span><span class="s0">x_test</span><span class="s2">, </span><span class="s0">y_test</span><span class="s2">, </span><span class="s0">verbose</span><span class="s2">=</span><span class="s4">0</span><span class="s2">)</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Final Test Loss: </span><span class="s1">{</span><span class="s0">loss</span><span class="s1">:</span><span class="s3">.4f</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Final Test MAE: </span><span class="s1">{</span><span class="s0">mae</span><span class="s1">:</span><span class="s3">.4f</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span>
+
+<span class="s0">final_test_mae </span><span class="s2">= </span><span class="s0">mae</span>
+
+<span class="s0">mae_table_final </span><span class="s2">= </span><span class="s3">f&quot;&quot;&quot;</span>
+<span class="s3">### Model Performance Summary (Final Test MAE)</span>
+<span class="s3">| Model        | Validation MAE               | Test MAE                 |</span>
+<span class="s3">| ---          | ---                          | ---                      |</span>
+<span class="s3">| Baseline     | </span><span class="s1">{</span><span class="s0">final_val_mae_baseline</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">} </span><span class="s3">| </span><span class="s1">{</span><span class="s3">f'</span><span class="s1">{</span><span class="s0">final_test_mae</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}</span><span class="s3">' </span><span class="s1">if </span><span class="s0">best_model_name </span><span class="s2">== </span><span class="s3">'Baseline' </span><span class="s1">else </span><span class="s3">'N/A'</span><span class="s1">} </span><span class="s3">|</span>
+<span class="s3">| Regularizers | </span><span class="s1">{</span><span class="s0">final_val_mae_reg</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}      </span><span class="s3">| </span><span class="s1">{</span><span class="s3">f'</span><span class="s1">{</span><span class="s0">final_test_mae</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}</span><span class="s3">' </span><span class="s1">if </span><span class="s0">best_model_name </span><span class="s2">== </span><span class="s3">'Regularizers' </span><span class="s1">else </span><span class="s3">'N/A'</span><span class="s1">} </span><span class="s3">|</span>
+<span class="s3">| Dropout      | </span><span class="s1">{</span><span class="s0">final_val_mae_drop</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}     </span><span class="s3">| </span><span class="s1">{</span><span class="s3">f'</span><span class="s1">{</span><span class="s0">final_test_mae</span><span class="s1">:</span><span class="s3">.2f</span><span class="s1">}</span><span class="s3">' </span><span class="s1">if </span><span class="s0">best_model_name </span><span class="s2">== </span><span class="s3">'Dropout' </span><span class="s1">else </span><span class="s3">'N/A'</span><span class="s1">} </span><span class="s3">|</span>
+<span class="s1">\n</span><span class="s3">Note: Test MAE is reported only for the best performing model based on validation set.</span>
+<span class="s3">&quot;&quot;&quot;</span>
+<span class="s0">display</span><span class="s2">(</span><span class="s0">Markdown</span><span class="s2">(</span><span class="s0">mae_table_final</span><span class="s2">))</span>
+</pre>
+</body>
+</html>
