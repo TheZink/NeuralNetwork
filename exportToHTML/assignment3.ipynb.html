@@ -1,0 +1,214 @@
+<html>
+<head>
+<title>assignment3.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #7a7e85;}
+.s4 { color: #2aacb8;}
+.s5 { color: #6aab73;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+assignment3.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# Week 3 assignment <hr class="ls0">#%% md 
+Tämän viikon tehtävänä on kokeilla esiopetettujen verkkoja ja käsitellä kuvadataa. 
+ 
+Ensimmäiseksi haen CIFAR-10 kuvadatasetin tarvittavilla importeilla ja lataan kuvasetti. CIFAR-10 datasetti sisältää 50,000 32x32 kokoisia värillisiä kuvia koulutusta varten ja 10,000 validointikuvia. Valokuvat on merkattu yli 10 kategoriaan. <hr class="ls0">#%% 
+</span><span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">time</span>
+<span class="s1">from </span><span class="s0">tensorflow</span><span class="s2">.</span><span class="s0">keras</span><span class="s2">.</span><span class="s0">datasets </span><span class="s1">import </span><span class="s0">cifar10</span>
+<span class="s1">from </span><span class="s0">tensorflow</span><span class="s2">.</span><span class="s0">keras</span><span class="s2">.</span><span class="s0">applications</span><span class="s2">.</span><span class="s0">vgg16 </span><span class="s1">import </span><span class="s0">preprocess_input</span>
+<span class="s1">from </span><span class="s0">tensorflow</span><span class="s2">.</span><span class="s0">keras</span><span class="s2">.</span><span class="s0">utils </span><span class="s1">import </span><span class="s0">to_categorical</span>
+<span class="s1">from </span><span class="s0">tensorflow</span><span class="s2">.</span><span class="s0">keras</span><span class="s2">.</span><span class="s0">applications </span><span class="s1">import </span><span class="s0">VGG16</span>
+
+<span class="s3"># Loading data</span>
+<span class="s2">(</span><span class="s0">x_train_full</span><span class="s2">, </span><span class="s0">y_train_full</span><span class="s2">), (</span><span class="s0">x_test</span><span class="s2">, </span><span class="s0">y_test</span><span class="s2">) = </span><span class="s0">cifar10</span><span class="s2">.</span><span class="s0">load_data</span><span class="s2">()</span>
+<hr class="ls0"><span class="s0">#%% md 
+Harjoituksessa käytän VGG16-mallia piirteiden irrottamiseen datasetille. Alkuun käytän &quot;preprocess_input&quot; funktiota, varmistakseen, että pikseliarvot skaalataan oikein esikoulutetulle verkolle. 
+ <hr class="ls0">#%% 
+</span>
+<span class="s3"># Datan jakaminen harjoitus ja validointia varten</span>
+<span class="s0">x_train </span><span class="s2">= </span><span class="s0">x_train_full</span><span class="s2">[:</span><span class="s4">40000</span><span class="s2">]</span>
+<span class="s0">y_train </span><span class="s2">= </span><span class="s0">y_train_full</span><span class="s2">[:</span><span class="s4">40000</span><span class="s2">]</span>
+<span class="s0">x_val </span><span class="s2">= </span><span class="s0">x_train_full</span><span class="s2">[</span><span class="s4">40000</span><span class="s2">:]</span>
+<span class="s0">y_val </span><span class="s2">= </span><span class="s0">y_train_full</span><span class="s2">[</span><span class="s4">40000</span><span class="s2">:]</span>
+
+<span class="s3"># Datan esikäsittely VGG16 varten</span>
+<span class="s0">x_train_pre </span><span class="s2">= </span><span class="s0">preprocess_input</span><span class="s2">(</span><span class="s0">x_train</span><span class="s2">.</span><span class="s0">astype</span><span class="s2">(</span><span class="s5">'float32'</span><span class="s2">))</span>
+<span class="s0">x_val_pre </span><span class="s2">= </span><span class="s0">preprocess_input</span><span class="s2">(</span><span class="s0">x_val</span><span class="s2">.</span><span class="s0">astype</span><span class="s2">(</span><span class="s5">'float32'</span><span class="s2">))</span>
+<span class="s0">x_test_pre </span><span class="s2">= </span><span class="s0">preprocess_input</span><span class="s2">(</span><span class="s0">x_test</span><span class="s2">.</span><span class="s0">astype</span><span class="s2">(</span><span class="s5">'float32'</span><span class="s2">))</span>
+
+<span class="s3"># One-hot enkoodaus</span>
+<span class="s0">y_train </span><span class="s2">= </span><span class="s0">to_categorical</span><span class="s2">(</span><span class="s0">y_train</span><span class="s2">, </span><span class="s4">10</span><span class="s2">)</span>
+<span class="s0">y_val </span><span class="s2">= </span><span class="s0">to_categorical</span><span class="s2">(</span><span class="s0">y_val</span><span class="s2">, </span><span class="s4">10</span><span class="s2">)</span>
+<span class="s0">y_test </span><span class="s2">= </span><span class="s0">to_categorical</span><span class="s2">(</span><span class="s0">y_test</span><span class="s2">, </span><span class="s4">10</span><span class="s2">)</span>
+
+<span class="s0">epoch_amount </span><span class="s2">= </span><span class="s4">20</span>
+<span class="s0">batch </span><span class="s2">= </span><span class="s4">64</span>
+<hr class="ls0"><span class="s0">#%% md 
+# Convolutional Neural Network (CNN) 
+ 
+Tässä koodiblokissa käytän perinteisen konvoluutioneuroverkon (CNN) vertailua varten. Käytännössä malli on rakennettu alusta asti ja ei käytä esikoulutettua dataa, vaan oppii tunnistamaan piirteet itse projektin datasta <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">keras </span><span class="s1">import </span><span class="s0">Sequential</span><span class="s2">, </span><span class="s0">layers</span>
+
+<span class="s0">model_cnn </span><span class="s2">= </span><span class="s0">Sequential</span><span class="s2">([</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Input</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s4">32</span><span class="s2">, </span><span class="s4">32</span><span class="s2">, </span><span class="s4">3</span><span class="s2">)),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Rescaling</span><span class="s2">(</span><span class="s0">scale</span><span class="s2">=</span><span class="s4">1.</span><span class="s2">/</span><span class="s4">255</span><span class="s2">),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Conv2D</span><span class="s2">(</span><span class="s4">32</span><span class="s2">, (</span><span class="s4">3</span><span class="s2">, </span><span class="s4">3</span><span class="s2">), </span><span class="s0">activation</span><span class="s2">=</span><span class="s5">'relu'</span><span class="s2">),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">MaxPooling2D</span><span class="s2">((</span><span class="s4">2</span><span class="s2">, </span><span class="s4">2</span><span class="s2">)),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Conv2D</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, (</span><span class="s4">3</span><span class="s2">, </span><span class="s4">3</span><span class="s2">), </span><span class="s0">activation</span><span class="s2">=</span><span class="s5">'relu'</span><span class="s2">),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">MaxPooling2D</span><span class="s2">((</span><span class="s4">2</span><span class="s2">, </span><span class="s4">2</span><span class="s2">)),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Flatten</span><span class="s2">(),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Dense</span><span class="s2">(</span><span class="s4">64</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s5">'relu'</span><span class="s2">),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Dense</span><span class="s2">(</span><span class="s4">10</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s5">'softmax'</span><span class="s2">) ])</span>
+
+<span class="s0">model_cnn</span><span class="s2">.</span><span class="s0">compile</span><span class="s2">(</span><span class="s0">optimizer</span><span class="s2">=</span><span class="s5">'adam'</span><span class="s2">, </span><span class="s0">loss</span><span class="s2">=</span><span class="s5">'categorical_crossentropy'</span><span class="s2">, </span><span class="s0">metrics</span><span class="s2">=[</span><span class="s5">'accuracy'</span><span class="s2">])</span>
+
+<span class="s0">model_cnn</span><span class="s2">.</span><span class="s0">summary</span><span class="s2">()</span><hr class="ls0"><span class="s0">#%% 
+cnn_start </span><span class="s2">= </span><span class="s0">time</span><span class="s2">.</span><span class="s0">time</span><span class="s2">()</span>
+
+<span class="s0">history_cnn </span><span class="s2">= </span><span class="s0">model_cnn</span><span class="s2">.</span><span class="s0">fit</span><span class="s2">(</span>
+    <span class="s0">x_train</span><span class="s2">, </span><span class="s0">y_train</span><span class="s2">,</span>
+    <span class="s0">validation_data </span><span class="s2">= (</span><span class="s0">x_val</span><span class="s2">, </span><span class="s0">y_val</span><span class="s2">),</span>
+    <span class="s0">epochs </span><span class="s2">= </span><span class="s0">epoch_amount</span><span class="s2">,</span>
+    <span class="s0">batch_size </span><span class="s2">= </span><span class="s0">batch</span>
+<span class="s2">)</span>
+
+<span class="s0">cnn_end </span><span class="s2">= </span><span class="s0">time</span><span class="s2">.</span><span class="s0">time</span><span class="s2">()</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;Training time: </span><span class="s1">{</span><span class="s0">cnn_end </span><span class="s2">- </span><span class="s0">cnn_start</span><span class="s1">:</span><span class="s5">.2f</span><span class="s1">} </span><span class="s5">seconds&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;Epochs: </span><span class="s1">{</span><span class="s0">epoch_amount</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;Batch size: </span><span class="s1">{</span><span class="s0">batch</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span>
+
+<span class="s0">acc </span><span class="s2">= </span><span class="s0">history_cnn</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'accuracy'</span><span class="s2">]</span>
+<span class="s0">val_acc </span><span class="s2">= </span><span class="s0">history_cnn</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'val_accuracy'</span><span class="s2">]</span>
+<span class="s0">loss </span><span class="s2">= </span><span class="s0">history_cnn</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'loss'</span><span class="s2">]</span>
+<span class="s0">val_loss </span><span class="s2">= </span><span class="s0">history_cnn</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'val_loss'</span><span class="s2">]</span>
+
+<span class="s0">epochs </span><span class="s2">= </span><span class="s0">range</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s0">len</span><span class="s2">(</span><span class="s0">acc</span><span class="s2">)+</span><span class="s4">1</span><span class="s2">)</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">acc</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Training acc'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">val_acc</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Validation acc'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Training and validation accuracy'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">()</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">loss</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Training loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">val_loss</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Validation loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Training and validation loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span><hr class="ls0"><span class="s0">#%% md 
+# VGG16 
+ 
+Seuraavaksi lataan VGG16 mallin ilman yläosan luokittelijaa parametrin &quot;include_top=False&quot; avulla. Tämä sen takia, koska haluan käyttää mallin valmiiksi oppimia konvoluutiokerroksia (Feature Extractor), jotka osaavat tunnistaa kuvia yleisiä muotoja, kuten reunoja ja värejä. 
+ 
+Jätän alkuperäisen luokittelijan pois, jotta voin korvata sen omalla tiheällä verkolla, joka on räätälöity nimenomaan CIFAR-10 datasetin eri luokille. <hr class="ls0">#%% 
+model_vgg </span><span class="s2">= </span><span class="s0">VGG16</span><span class="s2">(</span>
+                  <span class="s0">weights</span><span class="s2">=</span><span class="s5">'imagenet'</span><span class="s2">,</span>
+                  <span class="s0">include_top</span><span class="s2">=</span><span class="s1">False</span><span class="s2">,</span>
+                  <span class="s0">input_shape</span><span class="s2">=(</span><span class="s4">32</span><span class="s2">, </span><span class="s4">32</span><span class="s2">, </span><span class="s4">3</span><span class="s2">)</span>
+                  <span class="s2">)</span>
+
+<span class="s0">model_vgg</span><span class="s2">.</span><span class="s0">trainable </span><span class="s2">= </span><span class="s1">False</span>
+<span class="s0">model_vgg</span><span class="s2">.</span><span class="s0">summary</span><span class="s2">()</span><hr class="ls0"><span class="s0">#%% md 
+Tässä irrotan piirteet (Fast Feature Extraction) VGG16 luokkitelijaa varten ja tallennan ne. <hr class="ls0">#%% 
+</span><span class="s1">def </span><span class="s0">extract_features</span><span class="s2">(</span><span class="s0">dataset</span><span class="s2">, </span><span class="s0">sample_count</span><span class="s2">):</span>
+    <span class="s3"># VGG16 ulostulo 32x32 syötteellä on (batch, 1, 1, 512)</span>
+    <span class="s0">features </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">zeros</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s0">sample_count</span><span class="s2">, </span><span class="s4">1</span><span class="s2">, </span><span class="s4">1</span><span class="s2">, </span><span class="s4">512</span><span class="s2">))</span>
+    <span class="s0">labels </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">zeros</span><span class="s2">(</span><span class="s0">shape</span><span class="s2">=(</span><span class="s0">sample_count</span><span class="s2">, </span><span class="s4">10</span><span class="s2">))</span>
+
+    <span class="s0">features </span><span class="s2">= </span><span class="s0">model_vgg</span><span class="s2">.</span><span class="s0">predict</span><span class="s2">(</span><span class="s0">dataset</span><span class="s2">)</span>
+    <span class="s1">return </span><span class="s0">features</span>
+
+<span class="s0">x_train_features </span><span class="s2">= </span><span class="s0">extract_features</span><span class="s2">(</span><span class="s0">x_train_pre</span><span class="s2">, </span><span class="s4">40000</span><span class="s2">)</span>
+<span class="s0">x_val_features </span><span class="s2">= </span><span class="s0">extract_features</span><span class="s2">(</span><span class="s0">x_val_pre</span><span class="s2">, </span><span class="s4">10000</span><span class="s2">)</span>
+<span class="s0">x_test_features </span><span class="s2">= </span><span class="s0">extract_features</span><span class="s2">(</span><span class="s0">x_test_pre</span><span class="s2">, </span><span class="s4">10000</span><span class="s2">)</span>
+
+<span class="s3"># Litistetään piirteet luokittelijaa varten</span>
+<span class="s0">x_train_features </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span class="s0">x_train_features</span><span class="s2">, (</span><span class="s4">40000</span><span class="s2">, </span><span class="s4">1 </span><span class="s2">* </span><span class="s4">1 </span><span class="s2">* </span><span class="s4">512</span><span class="s2">))</span>
+<span class="s0">x_val_features </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span class="s0">x_val_features</span><span class="s2">, (</span><span class="s4">10000</span><span class="s2">, </span><span class="s4">1 </span><span class="s2">* </span><span class="s4">1 </span><span class="s2">* </span><span class="s4">512</span><span class="s2">))</span>
+<span class="s0">x_test_features </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">reshape</span><span class="s2">(</span><span class="s0">x_test_features</span><span class="s2">, (</span><span class="s4">10000</span><span class="s2">, </span><span class="s4">1 </span><span class="s2">* </span><span class="s4">1 </span><span class="s2">* </span><span class="s4">512</span><span class="s2">))</span><hr class="ls0"><span class="s0">#%% md 
+Seuraavaksi rakennan yksinkertaisen tiheän verkon (Fully Connected), joka oppii tunnistamaan lajit piirteistä <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">tensorflow</span><span class="s2">.</span><span class="s0">keras </span><span class="s1">import </span><span class="s0">models</span><span class="s2">, </span><span class="s0">layers</span><span class="s2">, </span><span class="s0">optimizers</span>
+
+<span class="s0">vgg_start </span><span class="s2">= </span><span class="s0">time</span><span class="s2">.</span><span class="s0">time</span><span class="s2">()</span>
+
+<span class="s0">model </span><span class="s2">= </span><span class="s0">models</span><span class="s2">.</span><span class="s0">Sequential</span><span class="s2">([</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Dense</span><span class="s2">(</span><span class="s4">256</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s5">'relu'</span><span class="s2">, </span><span class="s0">input_dim</span><span class="s2">=</span><span class="s4">1 </span><span class="s2">* </span><span class="s4">1 </span><span class="s2">* </span><span class="s4">512</span><span class="s2">),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Dropout</span><span class="s2">(</span><span class="s4">0.5</span><span class="s2">),</span>
+    <span class="s0">layers</span><span class="s2">.</span><span class="s0">Dense</span><span class="s2">(</span><span class="s4">10</span><span class="s2">, </span><span class="s0">activation</span><span class="s2">=</span><span class="s5">'softmax'</span><span class="s2">)</span>
+<span class="s2">])</span>
+
+<span class="s0">model</span><span class="s2">.</span><span class="s0">compile</span><span class="s2">(</span><span class="s0">optimizer</span><span class="s2">=</span><span class="s0">optimizers</span><span class="s2">.</span><span class="s0">Adam</span><span class="s2">(</span><span class="s0">learning_rate</span><span class="s2">=</span><span class="s4">2e-4</span><span class="s2">),</span>
+              <span class="s0">loss</span><span class="s2">=</span><span class="s5">'categorical_crossentropy'</span><span class="s2">,</span>
+              <span class="s0">metrics</span><span class="s2">=[</span><span class="s5">'accuracy'</span><span class="s2">])</span>
+
+<span class="s0">history_vgg </span><span class="s2">= </span><span class="s0">model</span><span class="s2">.</span><span class="s0">fit</span><span class="s2">(</span><span class="s0">x_train_features</span><span class="s2">, </span><span class="s0">y_train</span><span class="s2">,</span>
+                    <span class="s0">epochs</span><span class="s2">=</span><span class="s0">epoch_amount</span><span class="s2">,</span>
+                    <span class="s0">batch_size</span><span class="s2">=</span><span class="s0">batch</span><span class="s2">,</span>
+                    <span class="s0">validation_data</span><span class="s2">=(</span><span class="s0">x_val_features</span><span class="s2">, </span><span class="s0">y_val</span><span class="s2">))</span>
+
+<span class="s0">vgg_end </span><span class="s2">= </span><span class="s0">time</span><span class="s2">.</span><span class="s0">time</span><span class="s2">()</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;Training time: </span><span class="s1">{</span><span class="s0">vgg_end </span><span class="s2">- </span><span class="s0">vgg_start</span><span class="s1">:</span><span class="s5">.2f</span><span class="s1">} </span><span class="s5">seconds&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;Epochs: </span><span class="s1">{</span><span class="s0">epoch_amount</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;Batch size: </span><span class="s1">{</span><span class="s0">batch</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s0">matplotlib</span><span class="s2">.</span><span class="s0">pyplot </span><span class="s1">as </span><span class="s0">plt</span>
+
+<span class="s0">acc </span><span class="s2">= </span><span class="s0">history_vgg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'accuracy'</span><span class="s2">]</span>
+<span class="s0">val_acc </span><span class="s2">= </span><span class="s0">history_vgg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'val_accuracy'</span><span class="s2">]</span>
+<span class="s0">loss </span><span class="s2">= </span><span class="s0">history_vgg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'loss'</span><span class="s2">]</span>
+<span class="s0">val_loss </span><span class="s2">= </span><span class="s0">history_vgg</span><span class="s2">.</span><span class="s0">history</span><span class="s2">[</span><span class="s5">'val_loss'</span><span class="s2">]</span>
+
+<span class="s0">epochs </span><span class="s2">= </span><span class="s0">range</span><span class="s2">(</span><span class="s4">1</span><span class="s2">, </span><span class="s0">len</span><span class="s2">(</span><span class="s0">acc</span><span class="s2">)+</span><span class="s4">1</span><span class="s2">)</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">acc</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Training acc'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">val_acc</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Validation acc'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Training and validation accuracy'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">figure</span><span class="s2">()</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">loss</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Training loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">plot</span><span class="s2">(</span><span class="s0">epochs</span><span class="s2">, </span><span class="s0">val_loss</span><span class="s2">, </span><span class="s0">label</span><span class="s2">=</span><span class="s5">'Validation loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">title</span><span class="s2">(</span><span class="s5">'Training and validation loss'</span><span class="s2">)</span>
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">legend</span><span class="s2">()</span>
+
+<span class="s0">plt</span><span class="s2">.</span><span class="s0">show</span><span class="s2">()</span><hr class="ls0"><span class="s0">#%% 
+test_loss</span><span class="s2">, </span><span class="s0">test_acc </span><span class="s2">= </span><span class="s0">model</span><span class="s2">.</span><span class="s0">evaluate</span><span class="s2">(</span><span class="s0">x_test_features</span><span class="s2">, </span><span class="s0">y_test</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;VGG16 test accuracy: </span><span class="s1">{</span><span class="s0">test_acc</span><span class="s1">:</span><span class="s5">.4f</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;VGG16 training time was </span><span class="s1">{</span><span class="s0">vgg_end </span><span class="s2">- </span><span class="s0">vgg_start</span><span class="s1">:</span><span class="s5">.2f</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+
+<span class="s0">test_loss</span><span class="s2">, </span><span class="s0">test_acc </span><span class="s2">= </span><span class="s0">model_cnn</span><span class="s2">.</span><span class="s0">evaluate</span><span class="s2">(</span><span class="s0">x_test</span><span class="s2">, </span><span class="s0">y_test</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;CNN test accuracy: </span><span class="s1">{</span><span class="s0">test_acc</span><span class="s1">:</span><span class="s5">.4f</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s5">f&quot;CNN training time was </span><span class="s1">{</span><span class="s0">cnn_end </span><span class="s2">- </span><span class="s0">cnn_start</span><span class="s1">:</span><span class="s5">.2f</span><span class="s1">}</span><span class="s5">&quot;</span><span class="s2">)</span>
+<hr class="ls0"><span class="s0">#%% md 
+# Pohdinta 
+ 
+Tässä harjoituksessa vertailin kahta erilaista lähestymistapaa CIFAR-10-datasetin kuvien luokitteluun. Alusta asti koulutettua konvoluutioneuroverkko (CNN) ja esikoulutettua VGG16-mallia, jota käytin piirteiden irrottamiseen (Feature Extraction) 
+ 
+Tulosten perusteella CNN saavutti hieman paremman testitarkkuudeen (67,74 %) kuin VGG16-malli (65,80 %). 
+ 
+Koulutusajassa VGG16-malli oli nopeampi (46,04 s), kun taas CNN-mallin kouluttaminen vei enemmän aikaa (57,25 s). 
+ 
+ 
+ <hr class="ls0">#%% md 
+# Yhteenveto 
+ 
+VGG16-malli on erittäin tehokas ajankäytön suhteen, mutta sen etu tarkkuudessa ei tullut tässä harjoituksessa esiin datasetin pienestä kuvakoon vuoksi. CNN pystyi oppimaan piirteitä paremmin matalan resoluution kuvilla. 
+ 
+Jos kuvien resoluutio olisi suurempi, esikoulutettu malli todennäköisesti voittaisi molemmilla osa-alueilla.</span></pre>
+</body>
+</html>
