@@ -1,0 +1,145 @@
+<html>
+<head>
+<title>assignment4.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+.s1 { color: #cf8e6d;}
+.s2 { color: #bcbec4;}
+.s3 { color: #6aab73;}
+.s4 { color: #7a7e85;}
+.s5 { color: #2aacb8;}
+.ls0 { height: 1px; border-width: 0; color: #43454a; background-color:#43454a}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+assignment4.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+# Week 4 assignment <hr class="ls0">#%% md 
+Tehtävän tavoitteena on oppia hyödyntämään valmiiksi opetettuja sanaupotuksia (word embeddings) ja syventää ymmärrystä siitä, miten kieli muunnetaan matemaattisiksi sanavektoreiksi.&quot; <hr class="ls0">#%% 
+</span><span class="s1">import </span><span class="s0">tensorflow </span><span class="s1">as </span><span class="s0">tf</span>
+<span class="s1">from </span><span class="s0">tensorflow </span><span class="s1">import </span><span class="s0">keras</span>
+<span class="s1">from </span><span class="s0">tensorflow</span><span class="s2">.</span><span class="s0">keras </span><span class="s1">import </span><span class="s0">layers</span><span class="s2">, </span><span class="s0">models</span>
+<span class="s1">import </span><span class="s0">tensorflow_datasets </span><span class="s1">as </span><span class="s0">tfds</span>
+<span class="s1">import </span><span class="s0">numpy </span><span class="s1">as </span><span class="s0">np</span>
+<span class="s1">import </span><span class="s0">time</span>
+<span class="s1">from </span><span class="s0">google</span><span class="s2">.</span><span class="s0">colab </span><span class="s1">import </span><span class="s0">drive</span>
+
+<span class="s0">drive</span><span class="s2">.</span><span class="s0">mount</span><span class="s2">(</span><span class="s3">'/content/drive'</span><span class="s2">) </span><span class="s4"># Google drive</span>
+<span class="s0">path </span><span class="s2">= </span><span class="s3">'/content/drive/MyDrive/Resources' </span><span class="s4"># Dataset location</span><hr class="ls0"><span class="s0">#%% md 
+Tämä koodiblokki toteuttaa datan esikäsittelyvaiheen, jossa raakatekstimuotoinen GloVe-aineisto muunnetaan tietokoneen ymmärtämäksi hakurakenteeksi. Koodissa suodatetaan aineistosta virheelliset rivit ja haetaan kohdesanojen koordinaatit 200-ulotteisessa vektoriavaruudessa <hr class="ls0">#%% 
+</span><span class="s1">from </span><span class="s0">os </span><span class="s1">import </span><span class="s0">linesep</span>
+<span class="s0">glove_path </span><span class="s2">= </span><span class="s3">'/content/drive/MyDrive/Resources/glove.twitter.27B.200d.txt'</span>
+<span class="s0">embeddings_index </span><span class="s2">= {}</span>
+<span class="s0">DIM </span><span class="s2">= </span><span class="s5">200</span>
+
+<span class="s1">with </span><span class="s0">open</span><span class="s2">(</span><span class="s0">glove_path</span><span class="s2">, </span><span class="s3">'r'</span><span class="s2">, </span><span class="s0">encoding</span><span class="s2">=</span><span class="s3">'utf-8'</span><span class="s2">) </span><span class="s1">as </span><span class="s0">f</span><span class="s2">:</span>
+    <span class="s1">for </span><span class="s0">line </span><span class="s1">in </span><span class="s0">f</span><span class="s2">:</span>
+        <span class="s0">values </span><span class="s2">= </span><span class="s0">line</span><span class="s2">.</span><span class="s0">rstrip</span><span class="s2">().</span><span class="s0">split</span><span class="s2">()</span>
+
+        <span class="s1">if </span><span class="s0">len</span><span class="s2">(</span><span class="s0">values</span><span class="s2">) &lt; </span><span class="s0">DIM </span><span class="s2">+ </span><span class="s5">1</span><span class="s2">:</span>
+            <span class="s1">continue</span>
+
+        <span class="s0">word </span><span class="s2">= </span><span class="s0">values</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
+
+        <span class="s1">try</span><span class="s2">:</span>
+            <span class="s0">vector </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">asarray</span><span class="s2">(</span><span class="s0">values</span><span class="s2">[</span><span class="s5">1</span><span class="s2">:], </span><span class="s0">dtype</span><span class="s2">=</span><span class="s3">'float32'</span><span class="s2">)</span>
+            <span class="s0">embeddings_index</span><span class="s2">[</span><span class="s0">word</span><span class="s2">] = </span><span class="s0">vector</span>
+        <span class="s1">except </span><span class="s0">ValueError</span><span class="s2">:</span>
+            <span class="s1">continue</span>
+
+<span class="s0">word1</span><span class="s2">, </span><span class="s0">word2</span><span class="s2">, </span><span class="s0">word3 </span><span class="s2">= </span><span class="s3">'man'</span><span class="s2">, </span><span class="s3">'woman'</span><span class="s2">, </span><span class="s3">'king'</span>
+
+<span class="s0">v_man </span><span class="s2">= </span><span class="s0">embeddings_index</span><span class="s2">.</span><span class="s0">get</span><span class="s2">(</span><span class="s0">word1</span><span class="s2">.</span><span class="s0">lower</span><span class="s2">().</span><span class="s0">strip</span><span class="s2">())</span>
+<span class="s0">v_woman </span><span class="s2">= </span><span class="s0">embeddings_index</span><span class="s2">.</span><span class="s0">get</span><span class="s2">(</span><span class="s0">word2</span><span class="s2">.</span><span class="s0">lower</span><span class="s2">().</span><span class="s0">strip</span><span class="s2">())</span>
+<span class="s0">v_king </span><span class="s2">= </span><span class="s0">embeddings_index</span><span class="s2">.</span><span class="s0">get</span><span class="s2">(</span><span class="s0">word3</span><span class="s2">.</span><span class="s0">lower</span><span class="s2">().</span><span class="s0">strip</span><span class="s2">())</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Sanakirjan koko: </span><span class="s1">{</span><span class="s0">len</span><span class="s2">(</span><span class="s0">embeddings_index</span><span class="s2">)</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% md 
+Tässä tarkastetaan, onko haetut sanat löytynynyt sanakirjasta. <hr class="ls0">#%% 
+missing </span><span class="s2">= []</span>
+
+<span class="s1">if </span><span class="s0">v_man </span><span class="s1">is None</span><span class="s2">: </span><span class="s0">missing</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">word1</span><span class="s2">)</span>
+<span class="s1">if </span><span class="s0">v_woman </span><span class="s1">is None</span><span class="s2">: </span><span class="s0">missing</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">word2</span><span class="s2">)</span>
+<span class="s1">if </span><span class="s0">v_king </span><span class="s1">is None</span><span class="s2">: </span><span class="s0">missing</span><span class="s2">.</span><span class="s0">append</span><span class="s2">(</span><span class="s0">word3</span><span class="s2">)</span>
+
+<span class="s1">if </span><span class="s0">missing</span><span class="s2">:</span>
+    <span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;VIRHE: Seuraavia sanoja ei löytynyt sanakirjasta: </span><span class="s1">{</span><span class="s0">missing</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span>
+    <span class="s0">print</span><span class="s2">(</span><span class="s0">list</span><span class="s2">(</span><span class="s0">embeddings_index</span><span class="s2">.</span><span class="s0">keys</span><span class="s2">())[:</span><span class="s5">5</span><span class="s2">])</span>
+<span class="s1">else</span><span class="s2">:</span>
+    <span class="s0">target_vector </span><span class="s2">= </span><span class="s0">v_woman </span><span class="s2">- </span><span class="s0">v_man </span><span class="s2">+ </span><span class="s0">v_king</span>
+    <span class="s0">print</span><span class="s2">(</span><span class="s3">&quot;Laskutoimitus onnistui!&quot;</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% md 
+Tämän funktion tarkoituksena on löytää sanakirjasta se sana, joka on matemaattisesti lähimpänä laskettua tulosvektoria. <hr class="ls0">#%% 
+</span><span class="s1">def </span><span class="s0">find_closest_improved</span><span class="s2">(</span><span class="s0">target_vec</span><span class="s2">, </span><span class="s0">embeddings</span><span class="s2">, </span><span class="s0">exclude_words</span><span class="s2">):</span>
+    <span class="s0">best_word </span><span class="s2">= </span><span class="s1">None</span>
+    <span class="s0">max_sim </span><span class="s2">= -</span><span class="s5">1.0</span>
+
+    <span class="s0">target_norm </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">linalg</span><span class="s2">.</span><span class="s0">norm</span><span class="s2">(</span><span class="s0">target_vec</span><span class="s2">)</span>
+
+    <span class="s1">for </span><span class="s0">word</span><span class="s2">, </span><span class="s0">vec </span><span class="s1">in </span><span class="s0">embeddings</span><span class="s2">.</span><span class="s0">items</span><span class="s2">():</span>
+        <span class="s1">if </span><span class="s0">word </span><span class="s1">in </span><span class="s0">exclude_words</span><span class="s2">:</span>
+            <span class="s1">continue</span>
+
+        <span class="s0">dot_product </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">dot</span><span class="s2">(</span><span class="s0">target_vec</span><span class="s2">, </span><span class="s0">vec</span><span class="s2">)</span>
+        <span class="s0">sim </span><span class="s2">= </span><span class="s0">dot_product </span><span class="s2">/ (</span><span class="s0">target_norm </span><span class="s2">* </span><span class="s0">np</span><span class="s2">.</span><span class="s0">linalg</span><span class="s2">.</span><span class="s0">norm</span><span class="s2">(</span><span class="s0">vec</span><span class="s2">))</span>
+
+        <span class="s1">if </span><span class="s0">sim </span><span class="s2">&gt; </span><span class="s0">max_sim</span><span class="s2">:</span>
+            <span class="s0">max_sim </span><span class="s2">= </span><span class="s0">sim</span>
+            <span class="s0">best_word </span><span class="s2">= </span><span class="s0">word</span>
+
+    <span class="s1">return </span><span class="s0">best_word</span><span class="s2">, </span><span class="s0">max_sim</span>
+
+<span class="s0">result</span><span class="s2">, </span><span class="s0">score </span><span class="s2">= </span><span class="s0">find_closest_improved</span><span class="s2">(</span><span class="s0">target_vector</span><span class="s2">, </span><span class="s0">embeddings_index</span><span class="s2">, [</span><span class="s3">'man'</span><span class="s2">, </span><span class="s3">'woman'</span><span class="s2">, </span><span class="s3">'king'</span><span class="s2">])</span>
+
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;</span><span class="s1">\n</span><span class="s3">Tehtävän tulos:&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Lähin sana: </span><span class="s1">{</span><span class="s0">result</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span>
+<span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;Samankaltaisuus: </span><span class="s1">{</span><span class="s0">score</span><span class="s1">:</span><span class="s3">.4f</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span><hr class="ls0"><span class="s0">#%% 
+</span>
+<span class="s1">def </span><span class="s0">cosine_sim</span><span class="s2">(</span><span class="s0">a</span><span class="s2">, </span><span class="s0">b</span><span class="s2">, </span><span class="s0">eps</span><span class="s2">=</span><span class="s5">1e-10</span><span class="s2">):</span>
+    <span class="s1">return </span><span class="s0">np</span><span class="s2">.</span><span class="s0">dot</span><span class="s2">(</span><span class="s0">a</span><span class="s2">, </span><span class="s0">b</span><span class="s2">) / ((</span><span class="s0">np</span><span class="s2">.</span><span class="s0">linalg</span><span class="s2">.</span><span class="s0">norm</span><span class="s2">(</span><span class="s0">a</span><span class="s2">) * </span><span class="s0">np</span><span class="s2">.</span><span class="s0">linalg</span><span class="s2">.</span><span class="s0">norm</span><span class="s2">(</span><span class="s0">b</span><span class="s2">)) + </span><span class="s0">eps</span><span class="s2">)</span>
+
+<span class="s1">def </span><span class="s0">find_topk_closest</span><span class="s2">(</span><span class="s0">target_vec</span><span class="s2">, </span><span class="s0">embeddings</span><span class="s2">, </span><span class="s0">k</span><span class="s2">=</span><span class="s5">10</span><span class="s2">, </span><span class="s0">exclude_words</span><span class="s2">=</span><span class="s1">None</span><span class="s2">):</span>
+    <span class="s1">if </span><span class="s0">exclude_words </span><span class="s1">is None</span><span class="s2">:</span>
+        <span class="s0">exclude_words </span><span class="s2">= </span><span class="s0">set</span><span class="s2">()</span>
+    <span class="s1">else</span><span class="s2">:</span>
+        <span class="s0">exclude_words </span><span class="s2">= </span><span class="s0">set</span><span class="s2">(</span><span class="s0">exclude_words</span><span class="s2">)</span>
+
+    <span class="s0">results </span><span class="s2">= []</span>
+    <span class="s0">target_dim </span><span class="s2">= </span><span class="s0">target_vec</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">]</span>
+    <span class="s0">target_norm </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">linalg</span><span class="s2">.</span><span class="s0">norm</span><span class="s2">(</span><span class="s0">target_vec</span><span class="s2">)</span>
+
+    <span class="s1">if </span><span class="s0">target_norm </span><span class="s2">== </span><span class="s5">0</span><span class="s2">:</span>
+        <span class="s1">raise </span><span class="s0">ValueError</span><span class="s2">(</span><span class="s3">&quot;target_vec norm is 0&quot;</span><span class="s2">)</span>
+
+    <span class="s1">for </span><span class="s0">word</span><span class="s2">, </span><span class="s0">vec </span><span class="s1">in </span><span class="s0">embeddings</span><span class="s2">.</span><span class="s0">items</span><span class="s2">():</span>
+        <span class="s1">if </span><span class="s0">word </span><span class="s1">in </span><span class="s0">exclude_words</span><span class="s2">:</span>
+            <span class="s1">continue</span>
+        <span class="s1">if </span><span class="s0">vec</span><span class="s2">.</span><span class="s0">shape</span><span class="s2">[</span><span class="s5">0</span><span class="s2">] != </span><span class="s0">target_dim</span><span class="s2">:</span>
+            <span class="s1">continue</span>
+
+        <span class="s0">vec_norm </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">linalg</span><span class="s2">.</span><span class="s0">norm</span><span class="s2">(</span><span class="s0">vec</span><span class="s2">)</span>
+        <span class="s1">if </span><span class="s0">vec_norm </span><span class="s2">== </span><span class="s5">0</span><span class="s2">:</span>
+            <span class="s1">continue</span>
+
+        <span class="s0">sim </span><span class="s2">= </span><span class="s0">np</span><span class="s2">.</span><span class="s0">dot</span><span class="s2">(</span><span class="s0">target_vec</span><span class="s2">, </span><span class="s0">vec</span><span class="s2">) / (</span><span class="s0">target_norm </span><span class="s2">* </span><span class="s0">vec_norm</span><span class="s2">)</span>
+        <span class="s0">results</span><span class="s2">.</span><span class="s0">append</span><span class="s2">((</span><span class="s0">word</span><span class="s2">, </span><span class="s0">float</span><span class="s2">(</span><span class="s0">sim</span><span class="s2">)))</span>
+
+    <span class="s0">results</span><span class="s2">.</span><span class="s0">sort</span><span class="s2">(</span><span class="s0">key</span><span class="s2">=</span><span class="s1">lambda </span><span class="s0">x</span><span class="s2">: </span><span class="s0">x</span><span class="s2">[</span><span class="s5">1</span><span class="s2">], </span><span class="s0">reverse</span><span class="s2">=</span><span class="s1">True</span><span class="s2">)</span>
+    <span class="s1">return </span><span class="s0">results</span><span class="s2">[:</span><span class="s0">k</span><span class="s2">]</span>
+
+<span class="s0">target_vector </span><span class="s2">= </span><span class="s0">v_woman </span><span class="s2">- </span><span class="s0">v_man </span><span class="s2">+ </span><span class="s0">v_king</span>
+
+<span class="s0">top </span><span class="s2">= </span><span class="s0">find_topk_closest</span><span class="s2">(</span>
+    <span class="s0">target_vector</span><span class="s2">,</span>
+    <span class="s0">embeddings_index</span><span class="s2">,</span>
+    <span class="s0">k</span><span class="s2">=</span><span class="s5">10</span><span class="s2">,</span>
+    <span class="s0">exclude_words</span><span class="s2">=[</span><span class="s3">&quot;man&quot;</span><span class="s2">, </span><span class="s3">&quot;woman&quot;</span><span class="s2">, </span><span class="s3">&quot;king&quot;</span><span class="s2">]</span>
+<span class="s2">)</span>
+
+<span class="s1">for </span><span class="s0">i</span><span class="s2">, (</span><span class="s0">w</span><span class="s2">, </span><span class="s0">s</span><span class="s2">) </span><span class="s1">in </span><span class="s0">enumerate</span><span class="s2">(</span><span class="s0">top</span><span class="s2">, </span><span class="s5">1</span><span class="s2">):</span>
+    <span class="s0">print</span><span class="s2">(</span><span class="s3">f&quot;</span><span class="s1">{</span><span class="s0">i</span><span class="s1">:</span><span class="s3">2d</span><span class="s1">}</span><span class="s3">. </span><span class="s1">{</span><span class="s0">w</span><span class="s1">:</span><span class="s3">15s</span><span class="s1">}  </span><span class="s3">cos=</span><span class="s1">{</span><span class="s0">s</span><span class="s1">:</span><span class="s3">.4f</span><span class="s1">}</span><span class="s3">&quot;</span><span class="s2">)</span></pre>
+</body>
+</html>
